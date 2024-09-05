@@ -20,6 +20,7 @@ module.exports = function (middleware) {
 		setCSPHeaders(headers);
 		setAccessControlHeaders(headers, req);
 		setAdditionalHeaders(headers);
+		setResponseHeaders(res, headers);
 
 		// if (meta.config['csp-frame-ancestors']) {
 		// 	headers['Content-Security-Policy'] = `frame-ancestors ${meta.config['csp-frame-ancestors']}`;
@@ -75,12 +76,11 @@ module.exports = function (middleware) {
 		// 	headers['X-Upstream-Hostname'] = os.hostname().replace(/[^0-9A-Za-z-.]/g, '');
 		// }
 
-		for (const [key, value] of Object.entries(headers)) {
-			if (value) {
-				res.setHeader(key, value);
-			}
-		}
-
+		// for (const [key, value] of Object.entries(headers)) {
+		// 	if (value) {
+		// 		res.setHeader(key, value);
+		// 	}
+		// }
 		next();
 	});
 
@@ -140,6 +140,14 @@ module.exports = function (middleware) {
 		}
 		if (process.env.NODE_ENV === 'development') {
 			headers['X-Upstream-Hostname'] = os.hostname().replace(/[^0-9A-Za-z-.]/g, '');
+		}
+	}
+
+	function setResponseHeaders(res, headers) {
+		for (const [key, value] of Object.entries(headers)) {
+			if (value) {
+				res.setHeader(key, value);
+			}
 		}
 	}
 
