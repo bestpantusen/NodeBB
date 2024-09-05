@@ -19,6 +19,7 @@ module.exports = function (middleware) {
 
 		setCSPHeaders(headers);
 		setAccessControlHeaders(headers, req);
+		setAdditionalHeaders(headers);
 
 		// if (meta.config['csp-frame-ancestors']) {
 		// 	headers['Content-Security-Policy'] = `frame-ancestors ${meta.config['csp-frame-ancestors']}`;
@@ -62,17 +63,17 @@ module.exports = function (middleware) {
 		// 	});
 		// }
 
-		if (meta.config['permissions-policy']) {
-			headers['Permissions-Policy'] = meta.config['permissions-policy'];
-		}
+		// if (meta.config['permissions-policy']) {
+		// 	headers['Permissions-Policy'] = meta.config['permissions-policy'];
+		// }
 
-		if (meta.config['access-control-allow-credentials']) {
-			headers['Access-Control-Allow-Credentials'] = meta.config['access-control-allow-credentials'];
-		}
+		// if (meta.config['access-control-allow-credentials']) {
+		// 	headers['Access-Control-Allow-Credentials'] = meta.config['access-control-allow-credentials'];
+		// }
 
-		if (process.env.NODE_ENV === 'development') {
-			headers['X-Upstream-Hostname'] = os.hostname().replace(/[^0-9A-Za-z-.]/g, '');
-		}
+		// if (process.env.NODE_ENV === 'development') {
+		// 	headers['X-Upstream-Hostname'] = os.hostname().replace(/[^0-9A-Za-z-.]/g, '');
+		// }
 
 		for (const [key, value] of Object.entries(headers)) {
 			if (value) {
@@ -92,6 +93,15 @@ module.exports = function (middleware) {
 		} else {
 			headers['Content-Security-Policy'] = 'frame-ancestors \'self\'';
 			headers['X-Frame-Options'] = 'SAMEORIGIN';
+		}
+	}
+
+	function setAccessControlHeaders(headers, req) {
+		if (meta.config['access-control-allow-origin']) {
+			setAccessControlAllowOrigin(headers, req);
+		}
+		if (meta.config['access-control-allow-origin-regex']) {
+			setAccessControlAllowOriginRegex(headers, req);
 		}
 	}
 
@@ -119,6 +129,18 @@ module.exports = function (middleware) {
 				headers.Vary = headers.Vary ? `${headers.Vary}, Origin` : 'Origin';
 			}
 		});
+	}
+
+	function setAdditionalHeaders(headers) {
+		if (meta.config['permissions-policy']) {
+			headers['Permissions-Policy'] = meta.config['permissions-policy'];
+		}
+		if (meta.config['access-control-allow-credentials']) {
+			headers['Access-Control-Allow-Credentials'] = meta.config['access-control-allow-credentials'];
+		}
+		if (process.env.NODE_ENV === 'development') {
+			headers['X-Upstream-Hostname'] = os.hostname().replace(/[^0-9A-Za-z-.]/g, '');
+		}
 	}
 
 	middleware.autoLocale = helpers.try(async (req, res, next) => {
