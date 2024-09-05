@@ -173,5 +173,40 @@ describe('Middlewares', () => {
 			assert.strictEqual(response.headers['cache-control'], 'private');
 		});
 	});
+
+	describe('Header functions', () => {
+		let headers;
+		beforeEach(() => {
+			headers = {};
+		});
+		describe('setAccessControlCreds', () => {
+			const { setAccessControlCreds } = require('../src/middleware');
+			it('should set Access-Control-Allow-Credentials if config exists', () => {
+				global.meta = {
+					config: {
+						'access-control-allow-credentials': 'true',
+					},
+				};
+				setAccessControlCreds(headers);
+				assert.strictEqual(headers['Access-Control-Allow-Credentials'], 'true');
+			});
+			it('should not set Access-Control-Allow-Credentials if config is missing', () => {
+				global.meta = {
+					config: {},
+				};
+				setAccessControlCreds(headers);
+				assert.strictEqual(headers['Access-Control-Allow-Credentials'], undefined);
+			});
+		});
+		describe('setDevelopment', () => {
+			const setDevelopment = require('../src/middleware');
+			const os = require('os');
+			it('should not set X-Upstream-Hostname if not in development environment', () => {
+				process.env.NODE_ENV = 'production';
+				setDevelopment(headers);
+				assert.strictEqual(headers['X-Upstream-Hostname'], undefined);
+			});
+		});
+	});
 });
 
