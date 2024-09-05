@@ -11,27 +11,12 @@ const plugins = require('../plugins');
 
 module.exports = function (middleware) {
 	middleware.addHeaders = helpers.try((req, res, next) => {
-
-		const headers = getInitialHeaders();
-
-		setCSPHeaders(headers);
-		setAccessControlHeaders(headers, req);
-		setAdditionalHeaders(headers);
-
-		setResponseHeaders(res, headers);
-
-		next();
-	});
-
-	function getInitialHeaders() {
-		return {
+		const headers = {
 			'X-Powered-By': encodeURI(meta.config['powered-by'] || 'NodeBB'),
 			'Access-Control-Allow-Methods': encodeURI(meta.config['access-control-allow-methods'] || ''),
 			'Access-Control-Allow-Headers': encodeURI(meta.config['access-control-allow-headers'] || ''),
 		};
-	}
 
-	function setCSPHeaders(headers) {
 		if (meta.config['csp-frame-ancestors']) {
 			headers['Content-Security-Policy'] = `frame-ancestors ${meta.config['csp-frame-ancestors']}`;
 			if (meta.config['csp-frame-ancestors'] === '\'none\'') {
@@ -41,63 +26,57 @@ module.exports = function (middleware) {
 			headers['Content-Security-Policy'] = 'frame-ancestors \'self\'';
 			headers['X-Frame-Options'] = 'SAMEORIGIN';
 		}
-	}
 
-	function setAccessControlHeaders(headers, req) {
 		if (meta.config['access-control-allow-origin']) {
-			setAccessControlAllowOrigin(headers, req);
-		}
-		if (meta.config['access-control-allow-origin-regex']) {
-			setAccessControlAllowOriginRegex(headers, req);
-		}
-	}
+			let origins = meta.config['access-control-allow-origin'].split(',');
+			origins = origins.map(origin => origin && origin.trim());
 
-	function setAccessControlAllowOrigin(headers, req) {
-		let origins = meta.config['access-control-allow-origin'].split(',').map(origin => origin.trim());
-		if (origins.includes(req.get('origin'))) {
-			headers['Access-Control-Allow-Origin'] = encodeURI(req.get('origin'));
-			headers.Vary = headers.Vary ? `${headers.Vary}, Origin` : 'Origin';
-		}
-	}
-
-	function setAccessControlAllowOriginRegex(headers, req) {
-		let originsRegex = meta.config['access-control-allow-origin-regex'].split(',').map(origin => {
-			try {
-				return new RegExp(origin.trim());
-			} catch (err) {
-				winston.error(`[middleware.addHeaders] Invalid RegExp For access-control-allow-origin ${origin}`);
-				return null;
-			}
-		});
-
-		originsRegex.forEach(regex => {
-			if (regex && regex.test(req.get('origin'))) {
+			if (origins.includes(req.get('origin'))) {
 				headers['Access-Control-Allow-Origin'] = encodeURI(req.get('origin'));
 				headers.Vary = headers.Vary ? `${headers.Vary}, Origin` : 'Origin';
 			}
-		});
-	}
+		}
 
-	function setAdditionalHeaders(headers) {
+		if (meta.config['access-control-allow-origin-regex']) {
+			let originsRegex = meta.config['access-control-allow-origin-regex'].split(',');
+			originsRegex = originsRegex.map((origin) => {
+				try {
+					origin = new RegExp(origin.trim());
+				} catch (err) {
+					winston.error(`[middleware.addHeaders] Invalid RegExp For access-control-allow-origin ${origin}`);
+					origin = null;
+				}
+				return origin;
+			});
+
+			originsRegex.forEach((regex) => {
+				if (regex && regex.test(req.get('origin'))) {
+					headers['Access-Control-Allow-Origin'] = encodeURI(req.get('origin'));
+					headers.Vary = headers.Vary ? `${headers.Vary}, Origin` : 'Origin';
+				}
+			});
+		}
+
 		if (meta.config['permissions-policy']) {
 			headers['Permissions-Policy'] = meta.config['permissions-policy'];
 		}
+
 		if (meta.config['access-control-allow-credentials']) {
 			headers['Access-Control-Allow-Credentials'] = meta.config['access-control-allow-credentials'];
 		}
+
 		if (process.env.NODE_ENV === 'development') {
 			headers['X-Upstream-Hostname'] = os.hostname().replace(/[^0-9A-Za-z-.]/g, '');
 		}
-	}
 
-	function setResponseHeaders(res, headers) {
 		for (const [key, value] of Object.entries(headers)) {
 			if (value) {
 				res.setHeader(key, value);
 			}
 		}
-	};
 
+		next();
+	});
 
 	middleware.autoLocale = helpers.try(async (req, res, next) => {
 		await plugins.hooks.fire('filter:middleware.autoLocale', {
