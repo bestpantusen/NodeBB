@@ -17,9 +17,13 @@ module.exports = function (middleware) {
 			'Access-Control-Allow-Headers': encodeURI(meta.config['access-control-allow-headers'] || ''),
 		};
 
+		console.log("Best Pantusen")
+
 		setCSPHeaders(headers);
 		setAccessControlHeaders(headers, req);
-		setAdditionalHeaders(headers);
+		setPermissionsPolicy(headers);
+		setAccessControlCreds(headers);
+		setDevelopment(headers);
 		setResponseHeaders(res, headers);
 		next();
 	});
@@ -73,13 +77,19 @@ module.exports = function (middleware) {
 		});
 	}
 
-	function setAdditionalHeaders(headers) {
+	function setPermissionsPolicy(headers) {
 		if (meta.config['permissions-policy']) {
 			headers['Permissions-Policy'] = meta.config['permissions-policy'];
 		}
+	}
+
+	function setAccessControlCreds(headers) {
 		if (meta.config['access-control-allow-credentials']) {
 			headers['Access-Control-Allow-Credentials'] = meta.config['access-control-allow-credentials'];
 		}
+	}
+
+	function setDevelopment(headers){
 		if (process.env.NODE_ENV === 'development') {
 			headers['X-Upstream-Hostname'] = os.hostname().replace(/[^0-9A-Za-z-.]/g, '');
 		}
