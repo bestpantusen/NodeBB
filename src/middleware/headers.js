@@ -17,15 +17,19 @@ module.exports = function (middleware) {
 			'Access-Control-Allow-Headers': encodeURI(meta.config['access-control-allow-headers'] || ''),
 		};
 
-		if (meta.config['csp-frame-ancestors']) {
-			headers['Content-Security-Policy'] = `frame-ancestors ${meta.config['csp-frame-ancestors']}`;
-			if (meta.config['csp-frame-ancestors'] === '\'none\'') {
-				headers['X-Frame-Options'] = 'DENY';
-			}
-		} else {
-			headers['Content-Security-Policy'] = 'frame-ancestors \'self\'';
-			headers['X-Frame-Options'] = 'SAMEORIGIN';
-		}
+		setCSPHeaders(headers);
+
+		// if (meta.config['csp-frame-ancestors']) {
+		// 	headers['Content-Security-Policy'] = `frame-ancestors ${meta.config['csp-frame-ancestors']}`;
+		// 	if (meta.config['csp-frame-ancestors'] === '\'none\'') {
+		// 		headers['X-Frame-Options'] = 'DENY';
+		// 	}
+		// } else {
+		// 	headers['Content-Security-Policy'] = 'frame-ancestors \'self\'';
+		// 	headers['X-Frame-Options'] = 'SAMEORIGIN';
+		// }
+
+		
 
 		if (meta.config['access-control-allow-origin']) {
 			let origins = meta.config['access-control-allow-origin'].split(',');
@@ -77,6 +81,18 @@ module.exports = function (middleware) {
 
 		next();
 	});
+
+	function setCSPHeaders(headers) {
+		if (meta.config['csp-frame-ancestors']) {
+			headers['Content-Security-Policy'] = `frame-ancestors ${meta.config['csp-frame-ancestors']}`;
+			if (meta.config['csp-frame-ancestors'] === '\'none\'') {
+				headers['X-Frame-Options'] = 'DENY';
+			}
+		} else {
+			headers['Content-Security-Policy'] = 'frame-ancestors \'self\'';
+			headers['X-Frame-Options'] = 'SAMEORIGIN';
+		}
+	}
 
 	middleware.autoLocale = helpers.try(async (req, res, next) => {
 		await plugins.hooks.fire('filter:middleware.autoLocale', {
