@@ -17,7 +17,7 @@ module.exports = function (middleware) {
 			'Access-Control-Allow-Headers': encodeURI(meta.config['access-control-allow-headers'] || ''),
 		};
 
-		console.log("Best Pantusen")
+		console.log('Best Pantusen');
 
 		setCSPHeaders(headers);
 		setAccessControlHeaders(headers, req);
@@ -89,7 +89,7 @@ module.exports = function (middleware) {
 		}
 	}
 
-	function setDevelopment(headers){
+	function setDevelopment(headers) {
 		if (process.env.NODE_ENV === 'development') {
 			headers['X-Upstream-Hostname'] = os.hostname().replace(/[^0-9A-Za-z-.]/g, '');
 		}
